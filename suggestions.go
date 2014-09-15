@@ -13,7 +13,7 @@ import (
 )
 
 func getSeries() (map[string]string, []string) {
-	pattern := regexp.MustCompile("\\[(\\w+)\\]\\s(\\S+)\\.S01E0[1234].*")
+	pattern := regexp.MustCompile("\\[(\\w+)\\]\\s(\\S+)\\.S01E0\\d.*")
 	names := map[string]string{}
 	names_order := []string{}
 
