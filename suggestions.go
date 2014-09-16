@@ -81,7 +81,7 @@ func series() []Series {
 
 	// collect series information
 	series_data := map[string]Series{}
-	for i := 0; i < len(series_data); i++ {
+	for i := 0; i < len(series_names); i++ {
 		s := <-result_chan
 		series_data[s.Name] = s
 	}
