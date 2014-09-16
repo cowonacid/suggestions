@@ -12,10 +12,10 @@ import (
 	"strings"
 )
 
-func getSeries() map[string]string {
-
+func getSeries() (map[string]string, []string) {
 	pattern := regexp.MustCompile("\\[(\\w+)\\]\\s(\\S+)\\.S01E0[1234].*")
 	names := map[string]string{}
+	names_order := []string{}
 
 	doc, err := goquery.NewDocument("http://serienjunkies.org/xml/feeds/episoden.xml")
 	if err != nil {
@@ -35,10 +35,11 @@ func getSeries() map[string]string {
 		_, exist := names[series]
 		if !exist {
 			names[series] = lang
+			names_order = append(names_order, series)
 		}
 	})
 
-	return names
+	return names, names_order
 }
 
 type Series struct {
@@ -70,26 +71,32 @@ func gatherSeriesInformation(series, lang string, res chan Series) {
 }
 
 func series() []Series {
-	series_data := getSeries()
+	series_names, series_order := getSeries()
 	result_chan := make(chan Series)
 
-	for series, lang := range series_data {
-		go gatherSeriesInformation(series, lang, result_chan)
+	// fetch information for each series concurrently
+	for _, series := range series_order {
+		go gatherSeriesInformation(series, series_names[series], result_chan)
 	}
 
-	data := []Series{}
-
+	// collect series information
+	series_data := map[string]Series{}
 	for i := 0; i < len(series_data); i++ {
 		s := <-result_chan
+		series_data[s.Name] = s
+	}
+
+	// return complete series information in order where it is found
+	data := []Series{}
+	for _, series := range series_order {
+		s := series_data[series]
 		if s.Ok {
 			data = append(data, s)
 		}
 	}
-
 	return data
 }
 
-// Get index template from bindata
 func buildTemplate() *template.Template {
 	html, _ := template.New("index.tmpl").Parse(indexTemplate)
 	return html
